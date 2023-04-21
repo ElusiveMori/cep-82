@@ -1,0 +1,21 @@
+[package]
+name = "contract-common"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["std", "test-support"]
+
+std = []
+
+onchain = ["casper-contract/no-std-helpers"]
+test-support=["casper-contract/test-support"]
+
+[dependencies]
+base64 = { version = "0.21.0", default-features = false, features = ["alloc"] }
+casper-contract = { version = "1.4.4", default-features = false }
+casper-types = { version = "1.5.0" }
+hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+once_cell = { version = "1.17.1", default-features = false, features = ["alloc"] }
+paste = "1.0.12"
+static_assertions = "1.1.0"

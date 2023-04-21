@@ -119,12 +119,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
-name = "contract"
+name = "contract-common"
 version = "0.1.0"
 dependencies = [
  "base64 0.21.0",
  "casper-contract",
  "casper-types",
+ "hex",
+ "once_cell",
+ "paste",
+ "static_assertions",
+]
+
+[[package]]
+name = "contract_marketplace"
+version = "0.1.0"
+dependencies = [
+ "base64 0.21.0",
+ "casper-contract",
+ "casper-types",
+ "contract-common",
  "hex",
  "once_cell",
  "paste",

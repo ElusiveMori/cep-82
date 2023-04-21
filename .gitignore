@@ -1,0 +1,15 @@
+/*
+**/target
+
+!/contract_custodial/
+!/contract_marketplace/
+!/contract_common/
+!/contract_memoize/
+!/contract_marketplace/
+!/tests/
+!/.gitignorte
+!/rust-toolchain
+!/rebuild_all.sh
+!/wasm/
+!/.gitignore
+!/README.md
