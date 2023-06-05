@@ -28,7 +28,7 @@ use casper_types::{
     account::AccountHash,
     bytesrepr::{Bytes, FromBytes, ToBytes},
     runtime_args, ApiError, CLValue, ContractHash, Key, Motes, PublicKey, RuntimeArgs, SecretKey,
-    StoredValue, U256, U512,
+    StoredValue, URef, U256, U512,
 };
 use once_cell::sync::Lazy;
 
@@ -36,6 +36,7 @@ pub mod cep78;
 pub mod cep82;
 pub mod deploy;
 pub mod erc20;
+pub mod state;
 
 const TEST_ACCOUNT_BALANCE: u64 = 10_000_000_000_000u64;
 const TEST_ACCOUNT: [u8; 32] = [255u8; 32];
@@ -43,7 +44,7 @@ const CONTRACT_ERC20_BYTES: &[u8] = include_bytes!("../../wasm/erc20.wasm");
 const CONTRACT_CEP78_BYTES: &[u8] = include_bytes!("../../wasm/cep78.wasm");
 const CONTRACT_CEP82_MARKETPLACE_BYTES: &[u8] = include_bytes!("../../wasm/cep82-marketplace.wasm");
 const CONTRACT_CEP82_CUSTODIAL_BYTES: &[u8] = include_bytes!("../../wasm/cep82-custodial.wasm");
-const CONTRACT_MEMOIZED_BYTES: &[u8] = include_bytes!("../../wasm/memoize.wasm");
+const CONTRACT_TESTUTIL_BYTES: &[u8] = include_bytes!("../../wasm/testutil.wasm");
 static DEPLOY_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 static CURRENT_SENDER: Lazy<Mutex<Option<AccountHash>>> = Lazy::new(|| Mutex::new(None));
@@ -227,7 +228,7 @@ pub fn current_sender() -> Option<AccountHash> {
     *current_sender
 }
 
-pub fn call_contract_memoized<T: FromBytes>(
+pub fn call_contract_with_result<T: FromBytes>(
     context: &mut TestContext,
     contract: ContractHash,
     entry_point: &str,
@@ -235,6 +236,7 @@ pub fn call_contract_memoized<T: FromBytes>(
 ) -> T {
     let sender = current_sender().unwrap_or(context.account.address);
     let mut runtime_args = RuntimeArgs::new();
+    runtime_args.insert("action", "call").unwrap();
     runtime_args.insert("target", contract).unwrap();
     runtime_args
         .insert("entry_point_name", entry_point)
@@ -246,7 +248,7 @@ pub fn call_contract_memoized<T: FromBytes>(
     );
 
     let call_request =
-        ExecuteRequestBuilder::module_bytes(sender, CONTRACT_MEMOIZED_BYTES.to_vec(), runtime_args)
+        ExecuteRequestBuilder::module_bytes(sender, CONTRACT_TESTUTIL_BYTES.to_vec(), runtime_args)
             .build();
 
     context
@@ -291,6 +293,38 @@ pub fn call_contract(
         .expect_success_ex();
 }
 
+pub fn new_purse(
+    context: &mut TestContext,
+    account: AccountHash,
+    name: &str,
+    amount: U512,
+) -> URef {
+    let mut runtime_args = RuntimeArgs::new();
+    runtime_args.insert("action", "new_purse").unwrap();
+    runtime_args.insert("name", name).unwrap();
+    runtime_args.insert("amount", amount).unwrap();
+
+    let call_request = ExecuteRequestBuilder::module_bytes(
+        account,
+        CONTRACT_TESTUTIL_BYTES.to_vec(),
+        runtime_args,
+    )
+    .build();
+
+    context
+        .builder
+        .exec(call_request)
+        .commit()
+        .expect_success_ex();
+
+    let returned = context.builder.get_account(account).unwrap().named_keys()[name];
+
+    match returned {
+        Key::URef(uref) => uref,
+        _ => panic!("Expected URef"),
+    }
+}
+
 trait TestBuilderExt {
     fn expect_success_ex(&mut self) -> &mut Self;
 }
@@ -306,15 +340,14 @@ impl TestBuilderExt for WasmTestBuilder<InMemoryGlobalState> {
             .expect("Unable to get first deploy result");
 
         if exec_result.is_failure() {
-            match exec_result.as_error() {
-                Some(engine_state::Error::Exec(execution::Error::Revert(ApiError::User(code)))) => {
-                    let error = erc20::Error::from(*code);
+            if let Some(engine_state::Error::Exec(execution::Error::Revert(ApiError::User(code)))) =
+                exec_result.as_error()
+            {
+                let error = erc20::Error::from(*code);
 
-                    if error != erc20::Error::Unknown {
-                        eprintln!("Possible ERC20 error: {:?}", error);
-                    }
+                if error != erc20::Error::Unknown {
+                    eprintln!("Possible ERC20 error: {error:?}");
                 }
-                _ => {}
             }
 
             panic!(

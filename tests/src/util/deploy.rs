@@ -9,8 +9,10 @@ use casper_execution_engine::{
 
 use super::{
     cep78::{InstallerRequestBuilder, MetadataMutability, OwnershipMode},
-    deploy_builder, CONTRACT_CEP78_BYTES, CONTRACT_CEP82_CUSTODIAL_BYTES,
-    CONTRACT_CEP82_MARKETPLACE_BYTES, CONTRACT_ERC20_BYTES,
+    deploy_builder,
+    state::RoyaltyStep,
+    CONTRACT_CEP78_BYTES, CONTRACT_CEP82_CUSTODIAL_BYTES, CONTRACT_CEP82_MARKETPLACE_BYTES,
+    CONTRACT_ERC20_BYTES,
 };
 use casper_types::{
     account::AccountHash, runtime_args, ContractHash, ContractPackageHash, Key, RuntimeArgs, U256,
@@ -90,18 +92,24 @@ where
 pub fn deploy_cep78<S>(
     builder: &mut WasmTestBuilder<S>,
     account: AccountHash,
+    transfer_filter: Option<Key>,
 ) -> (ContractHash, ContractPackageHash)
 where
     S: StateProvider + CommitProvider,
     EngineError: From<S::Error>,
     <S as StateProvider>::Error: Into<ExecError>,
 {
-    let deploy_args = InstallerRequestBuilder::default()
+    let mut deploy_args = InstallerRequestBuilder::default()
         .with_total_token_supply(100u64)
         .with_ownership_mode(OwnershipMode::Transferable)
         .with_identifier_mode(super::cep78::NFTIdentifierMode::Ordinal)
-        .with_metadata_mutability(MetadataMutability::Mutable)
-        .build();
+        .with_metadata_mutability(MetadataMutability::Mutable);
+
+    if let Some(transfer_filter) = transfer_filter {
+        deploy_args = deploy_args.with_transfer_filter_contract(transfer_filter);
+    }
+
+    let deploy_args = deploy_args.build();
 
     deploy_contract(
         builder,
@@ -135,10 +143,8 @@ where
 pub fn deploy_cep82_custodial<S>(
     builder: &mut WasmTestBuilder<S>,
     account: AccountHash,
-    wrapped_contract: ContractPackageHash,
-    whitelisted_payment_tokens: Vec<ContractPackageHash>,
     whitelisted_marketplaces: Vec<ContractPackageHash>,
-    royalty_percent: U256,
+    royalty_structure: Vec<RoyaltyStep>,
     manager: Key,
 ) -> (ContractHash, ContractPackageHash)
 where
@@ -147,10 +153,8 @@ where
     <S as StateProvider>::Error: Into<ExecError>,
 {
     let deploy_args = runtime_args! {
-        "wrapped_contract" => wrapped_contract,
-        "whitelisted_payment_tokens" => whitelisted_payment_tokens,
         "whitelisted_marketplaces" => whitelisted_marketplaces,
-        "royalty_percent" => royalty_percent,
+        "royalty_structure" => royalty_structure,
         "manager" => manager,
     };
 

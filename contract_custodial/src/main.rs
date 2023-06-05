@@ -11,13 +11,8 @@ forward_entrypoints! {
 
 forward_entrypoints! {
     ep: [
-        transfer,
-        balance_of,
-        owner_of,
-        metadata,
-        delegate,
-        set_delegate,
-        claim,
         calculate_royalty,
+        can_transfer,
+        pay_royalty,
     ]
 }

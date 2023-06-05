@@ -1,10 +1,10 @@
-use casper_types::{account::AccountHash, runtime_args, ContractHash, U256};
+use casper_types::{runtime_args, ContractHash, U256};
 use casper_types::{Key, RuntimeArgs};
 
-use super::{call_contract, call_contract_memoized, TestContext};
+use super::{call_contract, call_contract_with_result, TestContext};
 
 pub fn balance_of(context: &mut TestContext, contract: ContractHash, address: Key) -> U256 {
-    call_contract_memoized::<U256>(
+    call_contract_with_result::<U256>(
         context,
         contract,
         "balance_of",

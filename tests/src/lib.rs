@@ -2,24 +2,41 @@
 
 pub mod util;
 
-use casper_types::U256;
+use casper_types::{U256, U512};
 use util::{
     deploy::{deploy_cep78, deploy_cep82_custodial, deploy_cep82_marketplace, deploy_erc20},
     *,
 };
+
+use crate::util::state::RoyaltyStep;
 
 // Test for basic functionality
 #[test]
 fn health_test() {
     let mut context = setup_context();
     let account = context.account.address;
-    let (_, erc20_package) = deploy_erc20(&mut context.builder, context.account.address);
-    let (cep78_hash, cep78_package) = deploy_cep78(&mut context.builder, context.account.address);
-    let (cep82_hash, _) = deploy_cep82_marketplace(&mut context.builder, context.account.address);
+    let (_, cep82_cs_package) = deploy_cep82_custodial(
+        &mut context.builder,
+        account,
+        vec![],
+        RoyaltyStep::basic(),
+        account.into(),
+    );
+    let (cep78_hash, cep78_package) = deploy_cep78(
+        &mut context.builder,
+        context.account.address,
+        Some(cep82_cs_package.into()),
+    );
+    let (cep82_mp_hash, _) =
+        deploy_cep82_marketplace(&mut context.builder, context.account.address);
 
     cep78::register_owner(&mut context, cep78_hash, account.into());
-    cep82::marketplace::register_erc(&mut context, cep82_hash, erc20_package);
-    cep82::marketplace::register_nft(&mut context, cep82_hash, cep78_package, false);
+    cep82::marketplace::register_nft(
+        &mut context,
+        cep82_mp_hash,
+        cep78_package,
+        Some(cep82_cs_package),
+    );
 
     let (_, _, id1) = cep78::mint(&mut context, cep78_hash, account.into());
     let (_, _, id2) = cep78::mint(&mut context, cep78_hash, account.into());
@@ -32,97 +49,71 @@ fn health_test() {
 }
 
 #[test]
-fn wrap_and_trade() {
+fn post_and_trade() {
     let mut context = setup_context();
-    let root = context.account.address;
 
     let manager = UserAccount::unique_account(&mut context, 10);
     let buyer = UserAccount::unique_account(&mut context, 20);
 
-    let (erc20_hash, erc20_package) = deploy_erc20(&mut context.builder, context.account.address);
-    let (cep78_hash, cep78_package) = deploy_cep78(&mut context.builder, manager.address);
-    let (cep82_market_hash, cep82_market_package) =
-        deploy_cep82_marketplace(&mut context.builder, context.account.address);
-
-    erc20::transfer_from(
-        &mut context,
-        erc20_hash,
-        root.into(),
-        buyer.key(),
-        10_000_000.into(),
-    );
-
-    let (cep82_custodial_hash, cep82_custodial_package) = deploy_cep82_custodial(
+    let (cep82_cs_hash, cep82_cs_package) = deploy_cep82_custodial(
         &mut context.builder,
-        manager.address,
-        cep78_package,
-        vec![erc20_package],
-        vec![cep82_market_package],
-        U256::from(10),
+        context.account.address,
+        vec![],
+        RoyaltyStep::basic(),
         manager.address.into(),
     );
 
-    cep78::register_owner(&mut context, cep78_hash, cep82_custodial_package.into());
-
-    set_current_sender(manager.address);
-    let (_, _, token_id) = cep82::custodial::mint_and_claim(
-        &mut context,
-        cep78_hash,
-        cep82_custodial_hash,
-        cep82_custodial_package,
-        root.into(),
+    let (cep78_hash, cep78_package) = deploy_cep78(
+        &mut context.builder,
+        context.account.address,
+        Some(cep82_cs_hash.into()),
     );
-    set_current_sender(None);
 
-    let owner = cep78::owner_of(&mut context, cep78_hash, token_id);
-    let custodial_owner = cep78::owner_of(&mut context, cep82_custodial_hash, token_id);
+    let (cep82_mp_hash, _) =
+        deploy_cep82_marketplace(&mut context.builder, context.account.address);
 
-    assert_eq!(owner, cep82_custodial_package.into());
-    assert_eq!(custodial_owner, root.into());
-
-    cep82::marketplace::register_erc(&mut context, cep82_market_hash, erc20_package);
+    cep78::register_owner(&mut context, cep78_hash, buyer.address.into());
+    cep78::register_owner(&mut context, cep78_hash, manager.address.into());
     cep82::marketplace::register_nft(
         &mut context,
-        cep82_market_hash,
-        cep82_custodial_package,
-        true,
+        cep82_mp_hash,
+        cep78_package,
+        Some(cep82_cs_package),
     );
 
-    cep82::custodial::set_delegate(
-        &mut context,
-        cep82_custodial_hash,
-        token_id,
-        Some(cep82_market_package),
-    );
+    let (_, _, id1) = cep78::mint(&mut context, cep78_hash, manager.address.into());
 
+    let post_purse = new_purse(&mut context, manager.address, "post_purse", U512::from(0));
+
+    set_current_sender(manager.address);
+    cep78::approve(&mut context, cep78_hash, id1, cep82_mp_hash.into());
     let post_id = cep82::marketplace::post(
         &mut context,
-        cep82_market_hash,
-        cep82_custodial_package,
-        token_id,
+        cep82_mp_hash,
+        cep78_package,
+        id1,
         1_000_000.into(),
-        erc20_package,
+        post_purse,
     );
 
-    let root_balance_before = erc20::balance_of(&mut context, erc20_hash, root.into());
+    // let root_balance_before = erc20::balance_of(&mut context, erc20_hash, root.into());
+    dbg!(manager.address);
+    dbg!(buyer.address);
     set_current_sender(buyer.address);
-    erc20::approve(
+    let bid_purse = new_purse(
         &mut context,
-        erc20_hash,
-        cep82_market_package.into(),
+        buyer.address,
+        "bid_purse",
+        U512::from(10_000_000),
+    );
+    cep82::marketplace::bid(
+        &mut context,
+        cep82_mp_hash,
+        post_id,
+        bid_purse,
         1_000_000.into(),
     );
-    cep82::marketplace::bid(&mut context, cep82_market_hash, post_id, 1_000_000.into());
-    set_current_sender(None);
 
-    let owner = cep78::owner_of(&mut context, cep82_custodial_hash, token_id);
+    let owner = cep78::owner_of(&mut context, cep78_hash, id1);
     assert_eq!(owner, buyer.address.into());
-    let manager_balance = erc20::balance_of(&mut context, erc20_hash, manager.address.into());
-    assert_eq!(manager_balance, 1_000.into());
-    let buyer_balance = erc20::balance_of(&mut context, erc20_hash, buyer.address.into());
-    assert_eq!(buyer_balance, 9_000_000.into());
-    let root_balance = erc20::balance_of(&mut context, erc20_hash, root.into());
-    assert_eq!(root_balance - root_balance_before, 999_000.into());
-
-    dbg!(post_id);
 }

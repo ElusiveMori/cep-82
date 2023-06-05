@@ -140,6 +140,7 @@ dependencies = [
  "casper-types",
  "contract-common",
  "hex",
+ "num-traits",
  "once_cell",
  "paste",
  "static_assertions",

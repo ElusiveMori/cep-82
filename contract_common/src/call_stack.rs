@@ -12,7 +12,7 @@ st_non_sync_static! {
 
 /// Equivalent of [`runtime::get_call_stack`], but cached across invocations.
 pub fn read() -> &'static [CallStackElement] {
-    &*get()
+    get()
 }
 
 /// Get a call stack element at `depth`

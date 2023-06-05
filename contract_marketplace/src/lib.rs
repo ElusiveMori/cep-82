@@ -7,14 +7,14 @@ pub mod state;
 
 use contract_common::{
     call_stack::{self, CallStackElementEx},
-    ext,
+    ext, o_unwrap,
     prelude::*,
-    qlog, store_named_key_incremented,
+    r_unwrap, store_named_key_incremented,
     token::TokenIdentifier,
 };
-use state::{NftContractMetadata, OrderbookEntry, TokenContractMetadata};
+use state::{unset_target_purse_by_post_id, NftContractMetadata, OrderbookEntry};
 
-use crate::state::Counters;
+use crate::state::{set_target_purse_by_post_id, target_purse_by_post_id, Counters};
 
 pub const NK_ACCESS_UREF: &str = "cep82_marketplace_uref";
 pub const NK_CONTRACT: &str = "cep82_marketplace";
@@ -24,20 +24,17 @@ pub const NAME: &str = "marketplace";
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u16)]
 pub enum MarketError {
-    InvalidTokenIdentifier,
     InvalidMethodAccess,
     InvalidPaymentAmount,
 
-    MustBeDelegated,
+    MustBeApproved,
 
-    UnsupportedFungibleTokenContract,
     UnsupportedNFTContract,
 
     UnknownPostId,
     UnknownTokenId,
 
     ArithmeticOverflow,
-    RoyaltyMismatch,
 }
 
 impl From<MarketError> for ApiError {
@@ -58,88 +55,89 @@ pub fn install() {
     store_named_key_incremented(contract_hash.into(), NK_CONTRACT);
 }
 
-pub fn bid(post_id: u64, amount: U256) {
+pub fn bid(post_id: u64, source_purse: URef, amount: U512) {
     let entry = OrderbookEntry::by_id(post_id);
     let bidder = call_stack::caller().key();
     let owner = entry.owner;
-    let this = call_stack::current_package().into();
 
     if amount < entry.price {
         revert(MarketError::InvalidPaymentAmount);
     }
 
-    let quote_contract = TokenContractMetadata::by_id(entry.quote_contract_id);
     let nft_contract = NftContractMetadata::by_id(entry.nft_contract_id);
 
-    if nft_contract.is_cep82_compliant {
-        ext::erc20::transfer_from(quote_contract.package, bidder, this, entry.price);
-        let expected_royalty = ext::cep82::custodial::calculate_royalty(
-            nft_contract.package,
+    if let Some(custodial_package) = nft_contract.custodial_package {
+        let royalty_amount = ext::cep82::custodial::calculate_royalty(
+            custodial_package,
+            nft_contract.nft_package,
             &entry.token_id,
-            quote_contract.package,
             entry.price,
         );
-        qlog!("expected_royalty: {}", expected_royalty);
 
-        ext::erc20::approve(
-            quote_contract.package,
-            nft_contract.package.into(),
-            expected_royalty,
+        let royalty_purse = casper_contract::contract_api::system::create_purse();
+        let remaining_amount = amount
+            .checked_sub(royalty_amount)
+            .unwrap_or_revert_with(MarketError::ArithmeticOverflow);
+
+        r_unwrap!(
+            casper_contract::contract_api::system::transfer_from_purse_to_purse(
+                source_purse,
+                royalty_purse,
+                royalty_amount,
+                None,
+            )
         );
 
-        let before_royalty = ext::erc20::balance_of(quote_contract.package, this);
-        ext::cep82::custodial::transfer(
-            nft_contract.package,
+        let target_purse = o_unwrap!(target_purse_by_post_id(post_id), MarketError::UnknownPostId);
+        r_unwrap!(
+            casper_contract::contract_api::system::transfer_from_purse_to_purse(
+                source_purse,
+                target_purse,
+                remaining_amount,
+                None,
+            )
+        );
+
+        ext::cep82::custodial::pay_royalty(
+            custodial_package,
+            nft_contract.nft_package,
             &entry.token_id,
+            royalty_purse,
+            bidder,
             owner,
             bidder,
-            this,
-            quote_contract.package,
-            amount,
+            entry.price,
         );
-        let after_royalty = ext::erc20::balance_of(quote_contract.package, this);
-
-        let royalty = before_royalty
-            .checked_sub(after_royalty)
-            .unwrap_or_revert_with(MarketError::ArithmeticOverflow);
-
-        ensure_eq!(royalty, expected_royalty, MarketError::RoyaltyMismatch);
-
-        let remaining = amount
-            .checked_sub(royalty)
-            .unwrap_or_revert_with(MarketError::ArithmeticOverflow);
-        ext::erc20::transfer(quote_contract.package, owner, remaining);
-    } else {
-        ext::erc20::transfer_from(quote_contract.package, bidder, owner, entry.price);
-        ext::cep78::transfer(nft_contract.package, &entry.token_id, this, bidder);
     }
 
+    ext::cep78::transfer(
+        nft_contract.nft_package,
+        &entry.token_id,
+        entry.owner,
+        bidder,
+    );
+
+    unset_target_purse_by_post_id(post_id);
     OrderbookEntry::remove(post_id);
 }
 
 pub fn post(
-    token_id: TokenIdentifier,
-    quote_token_contract: ContractPackageHash,
-    price: U256,
     nft_contract: ContractPackageHash,
+    token_id: TokenIdentifier,
+    target_purse: URef,
+    price: U512,
 ) -> u64 {
     let caller = call_stack::caller().key();
 
-    let (quote_contract_id, _) = TokenContractMetadata::by_package_hash(quote_token_contract);
-    let (nft_contract_id, nft_metadata) = NftContractMetadata::by_package_hash(nft_contract);
+    let (nft_contract_id, _) = NftContractMetadata::by_package_hash(nft_contract);
 
-    if nft_metadata.is_cep82_compliant {
-        let delegate = ext::cep82::custodial::delegate(nft_contract, &token_id);
+    let approved = o_unwrap!(
+        ext::cep78::get_approved(nft_contract, &token_id),
+        MarketError::MustBeApproved
+    );
 
-        ensure_eq!(
-            delegate,
-            Some(call_stack::current_package()),
-            MarketError::MustBeDelegated
-        );
-    } else {
-        let target_key: Key = call_stack::current_package().into();
-        ext::cep78::transfer(nft_contract, &token_id, caller, target_key);
-    }
+    let this: Key = call_stack::current_contract().into();
+    ensure_eq!(approved, this, MarketError::MustBeApproved);
 
     let owner = ext::cep78::owner_of(nft_contract, &token_id);
     ensure_eq!(owner, caller, MarketError::InvalidMethodAccess);
@@ -152,11 +150,12 @@ pub fn post(
 
     let entry = OrderbookEntry {
         owner,
-        quote_contract_id,
         nft_contract_id,
         token_id,
         price,
     };
+
+    set_target_purse_by_post_id(post_id, target_purse);
 
     entry.write(post_id);
 
@@ -165,46 +164,28 @@ pub fn post(
 
 pub fn cancel(post_id: u64) {
     let caller = call_stack::caller().key();
-    let this = call_stack::current_package().into();
     let entry = OrderbookEntry::by_id(post_id);
 
     if entry.owner != caller {
         revert(MarketError::InvalidMethodAccess);
     }
 
-    let nft_contract = NftContractMetadata::by_id(entry.nft_contract_id);
-
-    if !nft_contract.is_cep82_compliant {
-        ext::cep78::transfer(nft_contract.package, &entry.token_id, this, caller);
-    }
-
     state::set_post_id_by_token_id(&entry.token_id, None);
     OrderbookEntry::remove(post_id);
 }
 
-pub fn register_erc20_contract(package: ContractPackageHash) {
-    let mut counters = Counters::read();
-    let contract_id = counters.post_id;
-    counters.post_id += 1;
-    counters.write();
-
-    let entry = TokenContractMetadata { package };
-    entry.write(contract_id);
-}
-
-pub fn register_cep78_contract(package: ContractPackageHash, is_cep82_compliant: bool) {
+pub fn register_cep78_contract(
+    nft_package: ContractPackageHash,
+    custodial_package: Option<ContractPackageHash>,
+) {
     let mut counters = Counters::read();
     let contract_id = counters.post_id;
     counters.post_id += 1;
     counters.write();
 
     let entry = NftContractMetadata {
-        package,
-        is_cep82_compliant,
+        nft_package,
+        custodial_package,
     };
     entry.write(contract_id);
-}
-
-pub fn request_undelegate(token_id: TokenIdentifier, _real_owner: Key) -> bool {
-    state::post_id_by_token_id(&token_id).is_none()
 }

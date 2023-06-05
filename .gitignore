@@ -4,7 +4,7 @@
 !/contract_custodial/
 !/contract_marketplace/
 !/contract_common/
-!/contract_memoize/
+!/contract_testutil/
 !/contract_marketplace/
 !/tests/
 !/.gitignorte

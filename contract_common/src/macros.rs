@@ -37,6 +37,7 @@ macro_rules! st_non_sync_static {
         #[cfg(not(feature = "onchain"))]
         pub(super) fn get() -> &'static $t {
             #[allow(unused)]
+            #[allow(clippy::declare_interior_mutable_const)]
             const _: $t = $init;
             panic!("cannot access non-Sync static in a non-wasm environment");
         }
@@ -251,6 +252,7 @@ macro_rules! serializable_structs {
 }
 
 /// Declare an entrypoint signature for a contract.
+#[allow(clippy::crate_in_macro_def)]
 #[macro_export]
 macro_rules! entrypoint {
     (
@@ -551,4 +553,9 @@ macro_rules! trace_block {
 
         result
     }};
+}
+
+#[macro_export]
+macro_rules! forward_ser_de_to_borsh {
+    ($n:ident) => {};
 }

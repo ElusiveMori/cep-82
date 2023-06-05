@@ -17,6 +17,7 @@ casper-contract = { version = "1.4.4", default-features = false }
 casper-types = { version = "1.5.0" }
 contract-common = { path = "../contract_common" }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+num-traits = { version = "0.2.15", default-features = false }
 once_cell = { version = "1.17.1", default-features = false, features = ["alloc"] }
 paste = "1.0.12"
 static_assertions = "1.1.0"

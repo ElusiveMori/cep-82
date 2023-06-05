@@ -10,115 +10,126 @@ use casper_types::{
 };
 
 pub mod consts {
-    pub(crate) const NFT_CONTRACT_WASM: &str = "contract.wasm";
-    pub(crate) const MINT_SESSION_WASM: &str = "mint_call.wasm";
-    pub(crate) const MINTING_CONTRACT_WASM: &str = "minting_contract.wasm";
-    pub(crate) const TRANSFER_SESSION_WASM: &str = "transfer_call.wasm";
-    pub(crate) const BALANCE_OF_SESSION_WASM: &str = "balance_of_call.wasm";
-    pub(crate) const OWNER_OF_SESSION_WASM: &str = "owner_of_call.wasm";
-    pub(crate) const GET_APPROVED_WASM: &str = "get_approved_call.wasm";
-    pub(crate) const UPDATED_RECEIPTS_WASM: &str = "updated_receipts.wasm";
-    pub(crate) const MANGLE_NAMED_KEYS: &str = "mangle_named_keys.wasm";
-    pub(crate) const CONTRACT_NAME: &str = "cep78_contract_hash_nft-test";
-    pub(crate) const MINTING_CONTRACT_NAME: &str = "minting_contract_hash";
-    pub(crate) const NFT_TEST_COLLECTION: &str = "nft-test";
-    pub(crate) const NFT_TEST_SYMBOL: &str = "TEST";
-    pub(crate) const ENTRY_POINT_INIT: &str = "init";
-    pub(crate) const ENTRY_POINT_SET_VARIABLES: &str = "set_variables";
-    pub(crate) const ENTRY_POINT_MINT: &str = "mint";
-    pub(crate) const ENTRY_POINT_BURN: &str = "burn";
-    pub(crate) const ENTRY_POINT_TRANSFER: &str = "transfer";
-    pub(crate) const ENTRY_POINT_APPROVE: &str = "approve";
-    pub(crate) const ENTRY_POINT_METADATA: &str = "metadata";
-    pub(crate) const ENTRY_POINT_SET_APPROVE_FOR_ALL: &str = "set_approval_for_all";
-    pub(crate) const ENTRY_POINT_SET_TOKEN_METADATA: &str = "set_token_metadata";
-    pub(crate) const ENTRY_POINT_REGISTER_OWNER: &str = "register_owner";
-    pub(crate) const ARG_COLLECTION_NAME: &str = "collection_name";
-    pub(crate) const ARG_COLLECTION_SYMBOL: &str = "collection_symbol";
-    pub(crate) const ARG_TOTAL_TOKEN_SUPPLY: &str = "total_token_supply";
-    pub(crate) const ARG_ALLOW_MINTING: &str = "allow_minting";
-    pub(crate) const ARG_MINTING_MODE: &str = "minting_mode";
-    pub(crate) const ARG_HOLDER_MODE: &str = "holder_mode";
-    pub(crate) const ARG_WHITELIST_MODE: &str = "whitelist_mode";
-    pub(crate) const ARG_CONTRACT_WHITELIST: &str = "contract_whitelist";
-    pub(crate) const NUMBER_OF_MINTED_TOKENS: &str = "number_of_minted_tokens";
-    pub(crate) const ARG_TOKEN_META_DATA: &str = "token_meta_data";
-    pub(crate) const METADATA_CUSTOM_VALIDATED: &str = "metadata_custom_validated";
-    pub(crate) const METADATA_CEP78: &str = "metadata_cep78";
-    pub(crate) const METADATA_NFT721: &str = "metadata_nft721";
-    pub(crate) const METADATA_RAW: &str = "metadata_raw";
-    pub(crate) const ARG_TOKEN_OWNER: &str = "token_owner";
-    pub(crate) const ARG_NFT_CONTRACT_HASH: &str = "nft_contract_hash";
-    pub(crate) const ARG_JSON_SCHEMA: &str = "json_schema";
-    pub(crate) const ARG_APPROVE_ALL: &str = "approve_all";
-    pub(crate) const ARG_NFT_METADATA_KIND: &str = "nft_metadata_kind";
-    pub(crate) const ARG_IDENTIFIER_MODE: &str = "identifier_mode";
-    pub(crate) const ARG_METADATA_MUTABILITY: &str = "metadata_mutability";
-    pub(crate) const ARG_BURN_MODE: &str = "burn_mode";
-    pub(crate) const ARG_OWNER_LOOKUP_MODE: &str = "owner_reverse_lookup_mode";
-    pub(crate) const TOKEN_ISSUERS: &str = "token_issuers";
-    pub(crate) const ARG_OWNERSHIP_MODE: &str = "ownership_mode";
-    pub(crate) const ARG_ADDITIONAL_REQUIRED_METADATA: &str = "additional_required_metadata";
-    pub(crate) const ARG_OPTIONAL_METADATA: &str = "optional_metadata";
-    pub(crate) const ARG_NFT_KIND: &str = "nft_kind";
-    pub(crate) const TOKEN_COUNTS: &str = "balances";
-    pub(crate) const TOKEN_OWNERS: &str = "token_owners";
-    pub(crate) const BURNT_TOKENS: &str = "burnt_tokens";
-    pub(crate) const OPERATOR: &str = "operator";
-    pub(crate) const BALANCES: &str = "balances";
-    pub(crate) const RECEIPT_NAME: &str = "receipt_name";
-    pub(crate) const ARG_OPERATOR: &str = "operator";
-    pub(crate) const ARG_TARGET_KEY: &str = "target_key";
-    pub(crate) const ARG_SOURCE_KEY: &str = "source_key";
-    pub(crate) const ARG_TOKEN_ID: &str = "token_id";
-    pub(crate) const ARG_TOKEN_HASH: &str = "token_hash";
-    pub(crate) const ARG_KEY_NAME: &str = "key_name";
-    pub(crate) const ARG_IS_HASH_IDENTIFIER_MODE: &str = "is_hash_identifier_mode";
-    pub(crate) const ARG_NAMED_KEY_CONVENTION: &str = "named_key_convention";
-    pub(crate) const ARG_ACCESS_KEY_NAME_1_0_0: &str = "access_key_name";
-    pub(crate) const ARG_HASH_KEY_NAME_1_0_0: &str = "hash_key_name";
-    pub(crate) const ACCOUNT_USER_1: [u8; 32] = [1u8; 32];
-    pub(crate) const ACCOUNT_USER_2: [u8; 32] = [2u8; 32];
-    pub(crate) const ACCOUNT_USER_3: [u8; 32] = [3u8; 32];
-    pub(crate) const TEST_PRETTY_721_META_DATA: &str = r#"{
-      "name": "John Doe",
-      "symbol": "abc",
-      "token_uri": "https://www.barfoo.com"
-    }"#;
-    pub(crate) const TEST_PRETTY_UPDATED_721_META_DATA: &str = r#"{
-      "name": "John Doe",
-      "symbol": "abc",
-      "token_uri": "https://www.foobar.com"
-    }"#;
-    pub(crate) const TEST_PRETTY_CEP78_METADATA: &str = r#"{
-      "name": "John Doe",
-      "token_uri": "https://www.barfoo.com",
-      "checksum": "940bffb3f2bba35f84313aa26da09ece3ad47045c6a1292c2bbd2df4ab1a55fb"
-    }"#;
-    pub(crate) const TEST_PRETTY_UPDATED_CEP78_METADATA: &str = r#"{
-      "name": "John Doe",
-      "token_uri": "https://www.foobar.com",
-      "checksum": "fda4feaa137e83972db628e521c92159f5dc253da1565c9da697b8ad845a0788"
-    }"#;
-    pub(crate) const TEST_COMPACT_META_DATA: &str =
-        r#"{"name": "John Doe","symbol": "abc","token_uri": "https://www.barfoo.com"}"#;
-    pub(crate) const MALFORMED_META_DATA: &str = r#"{
-      "name": "John Doe",
-      "symbol": abc,
-      "token_uri": "https://www.barfoo.com"
-    }"#;
-    pub(crate) const ACCESS_KEY_NAME_1_0_0: &str = "nft_contract_package_access";
-    pub(crate) const CONTRACT_1_0_0_WASM: &str = "1_0_0/contract.wasm";
-    pub(crate) const MINT_1_0_0_WASM: &str = "1_0_0/mint_call.wasm";
-    pub(crate) const PAGE_SIZE: u64 = 1000;
-    pub(crate) const UNMATCHED_HASH_COUNT: &str = "unmatched_hash_count";
-    pub(crate) const PAGE_DICTIONARY_PREFIX: &str = "page_";
-    pub(crate) const PAGE_LIMIT: &str = "page_limit";
-    pub(crate) const HASH_KEY_NAME: &str = "nft_contract_package";
-    pub(crate) const ARG_NFT_PACKAGE_HASH: &str = "nft_package_hash";
-    pub(crate) const INDEX_BY_HASH: &str = "index_by_hash";
-    pub(crate) const PAGE_TABLE: &str = "page_table";
-    pub(crate) const ARG_MINTING_CONTRACT_REVERSE_LOOKUP: &str = "reverse_lookup";
+    pub const PREFIX_ACCESS_KEY_NAME: &str = "cep78_contract_package_access";
+    pub const PREFIX_CEP78: &str = "cep78";
+    pub const PREFIX_CONTRACT_NAME: &str = "cep78_contract_hash";
+    pub const PREFIX_CONTRACT_VERSION: &str = "cep78_contract_version";
+    pub const PREFIX_HASH_KEY_NAME: &str = "cep78_contract_package";
+    pub const PREFIX_PAGE_DICTIONARY: &str = "page";
+
+    pub const ARG_ACCESS_KEY_NAME_1_0_0: &str = "access_key_name";
+    pub const ARG_ADDITIONAL_REQUIRED_METADATA: &str = "additional_required_metadata";
+    pub const ARG_ALLOW_MINTING: &str = "allow_minting";
+    pub const ARG_APPROVE_ALL: &str = "approve_all";
+    pub const ARG_BURN_MODE: &str = "burn_mode";
+    pub const ARG_COLLECTION_NAME: &str = "collection_name";
+    pub const ARG_COLLECTION_SYMBOL: &str = "collection_symbol";
+    pub const ARG_CONTRACT_WHITELIST: &str = "contract_whitelist";
+    pub const ARG_ACL_WHITELIST: &str = "acl_whitelist";
+    pub const ARG_EVENTS_MODE: &str = "events_mode";
+    pub const ARG_HASH_KEY_NAME_1_0_0: &str = "hash_key_name";
+    pub const ARG_HOLDER_MODE: &str = "holder_mode";
+    pub const ARG_IDENTIFIER_MODE: &str = "identifier_mode";
+    pub const ARG_JSON_SCHEMA: &str = "json_schema";
+    pub const ARG_OPERATOR: &str = "operator";
+    pub const ARG_METADATA_MUTABILITY: &str = "metadata_mutability";
+    pub const ARG_MINTING_MODE: &str = "minting_mode";
+    pub const ARG_NAMED_KEY_CONVENTION: &str = "named_key_convention";
+    pub const ARG_NFT_KIND: &str = "nft_kind";
+    pub const ARG_NFT_METADATA_KIND: &str = "nft_metadata_kind";
+    pub const ARG_NFT_PACKAGE_KEY: &str = "cep78_package_key";
+    pub const ARG_OPTIONAL_METADATA: &str = "optional_metadata";
+    pub const ARG_OWNERSHIP_MODE: &str = "ownership_mode";
+    pub const ARG_OWNER_LOOKUP_MODE: &str = "owner_reverse_lookup_mode";
+    pub const ARG_RECEIPT_NAME: &str = "receipt_name";
+    pub const ARG_SOURCE_KEY: &str = "source_key";
+    pub const ARG_SPENDER: &str = "spender";
+    pub const ARG_TARGET_KEY: &str = "target_key";
+    pub const ARG_TOKEN_HASH: &str = "token_hash";
+    pub const ARG_TOKEN_ID: &str = "token_id";
+    pub const ARG_TOKEN_META_DATA: &str = "token_meta_data";
+    pub const ARG_TOKEN_OWNER: &str = "token_owner";
+    pub const ARG_TOTAL_TOKEN_SUPPLY: &str = "total_token_supply";
+    pub const ARG_WHITELIST_MODE: &str = "whitelist_mode";
+    pub const ARG_TRANSFER_FILTER_CONTRACT: &str = "transfer_filter_contract";
+
+    pub const ENTRY_POINT_APPROVE: &str = "approve";
+    pub const ENTRY_POINT_BALANCE_OF: &str = "balance_of";
+    pub const ENTRY_POINT_BURN: &str = "burn";
+    pub const ENTRY_POINT_GET_APPROVED: &str = "get_approved";
+    pub const ENTRY_POINT_INIT: &str = "init";
+    pub const ENTRY_POINT_IS_APPROVED_FOR_ALL: &str = "is_approved_for_all";
+    pub const ENTRY_POINT_METADATA: &str = "metadata";
+    pub const ENTRY_POINT_MIGRATE: &str = "migrate";
+    pub const ENTRY_POINT_MINT: &str = "mint";
+    pub const ENTRY_POINT_OWNER_OF: &str = "owner_of";
+    pub const ENTRY_POINT_REVOKE: &str = "revoke";
+    pub const ENTRY_POINT_REGISTER_OWNER: &str = "register_owner";
+    pub const ENTRY_POINT_SET_APPROVALL_FOR_ALL: &str = "set_approval_for_all";
+    pub const ENTRY_POINT_SET_TOKEN_METADATA: &str = "set_token_metadata";
+    pub const ENTRY_POINT_SET_VARIABLES: &str = "set_variables";
+    pub const ENTRY_POINT_TRANSFER: &str = "transfer";
+    pub const ENTRY_POINT_UPDATED_RECEIPTS: &str = "updated_receipts";
+
+    pub const ALLOW_MINTING: &str = "allow_minting";
+    pub const APPROVED: &str = "approved";
+    pub const BURN_MODE: &str = "burn_mode";
+    pub const BURNT_TOKENS: &str = "burnt_tokens";
+    pub const COLLECTION_NAME: &str = "collection_name";
+    pub const COLLECTION_SYMBOL: &str = "collection_symbol";
+    pub const CONTRACT_WHITELIST: &str = "contract_whitelist";
+    pub const ACL_WHITELIST: &str = "acl_whitelist";
+    pub const EVENT_TYPE: &str = "event_type";
+    pub const EVENTS: &str = "events";
+    pub const EVENTS_MODE: &str = "events_mode";
+    pub const HASH_BY_INDEX: &str = "hash_by_index";
+    pub const HOLDER_MODE: &str = "holder_mode";
+    pub const IDENTIFIER_MODE: &str = "identifier_mode";
+    pub const INDEX_BY_HASH: &str = "index_by_hash";
+    pub const INSTALLER: &str = "installer";
+    pub const JSON_SCHEMA: &str = "json_schema";
+    pub const METADATA_CEP78: &str = "metadata_cep78";
+    pub const METADATA_CUSTOM_VALIDATED: &str = "metadata_custom_validated";
+    pub const METADATA_MUTABILITY: &str = "metadata_mutability";
+    pub const METADATA_NFT721: &str = "metadata_nft721";
+    pub const METADATA_RAW: &str = "metadata_raw";
+    pub const MIGRATION_FLAG: &str = "migration_flag";
+    pub const MINTING_MODE: &str = "minting_mode";
+    pub const NFT_KIND: &str = "nft_kind";
+    pub const NFT_METADATA_KIND: &str = "nft_metadata_kind";
+    pub const NFT_METADATA_KINDS: &str = "nft_metadata_kinds";
+    pub const NUMBER_OF_MINTED_TOKENS: &str = "number_of_minted_tokens";
+    pub const OPERATOR: &str = "operator";
+    pub const OPERATORS: &str = "operators";
+    pub const OWNED_TOKENS: &str = "owned_tokens";
+    pub const OWNER: &str = "owner";
+    pub const OWNERSHIP_MODE: &str = "ownership_mode";
+    pub const PAGE_LIMIT: &str = "page_limit";
+    pub const PAGE_TABLE: &str = "page_table";
+    pub const RECEIPT_NAME: &str = "receipt_name";
+    pub const RECIPIENT: &str = "recipient";
+    pub const REPORTING_MODE: &str = "reporting_mode";
+    pub const RLO_MFLAG: &str = "rlo_mflag";
+    pub const SENDER: &str = "sender";
+    pub const SPENDER: &str = "spender";
+    pub const TOKEN_COUNT: &str = "balances";
+    pub const TOKEN_ID: &str = "token_id";
+    pub const TOKEN_ISSUERS: &str = "token_issuers";
+    pub const TOKEN_OWNERS: &str = "token_owners";
+    pub const TOTAL_TOKEN_SUPPLY: &str = "total_token_supply";
+    pub const UNMATCHED_HASH_COUNT: &str = "unmatched_hash_count";
+    pub const WHITELIST_MODE: &str = "whitelist_mode";
+    pub const TRANSFER_FILTER_CONTRACT: &str = "transfer_filter_contract";
+    pub const TRANSFER_FILTER_CONTRACT_METHOD: &str = "can_transfer";
+
+    pub const NFT_TEST_COLLECTION: &str = "nft-test";
+    pub const NFT_TEST_SYMBOL: &str = "TEST";
+
+    pub const TEST_PRETTY_721_META_DATA: &str = r#"{
+    "name": "John Doe",
+    "symbol": "abc",
+    "token_uri": "https://www.barfoo.com"
+  }"#;
 }
 
 use consts::{
@@ -130,9 +141,11 @@ use consts::{
     NFT_TEST_SYMBOL,
 };
 
-use self::consts::TEST_PRETTY_721_META_DATA;
+use self::consts::{
+    ARG_ACL_WHITELIST, ARG_EVENTS_MODE, ARG_TRANSFER_FILTER_CONTRACT, TEST_PRETTY_721_META_DATA,
+};
 
-use super::{call_contract_memoized, TestContext};
+use super::{call_contract_with_result, TestContext};
 
 pub(crate) static TEST_CUSTOM_METADATA_SCHEMA: Lazy<CustomMetadataSchema> = Lazy::new(|| {
     let mut properties = BTreeMap::new();
@@ -269,6 +282,15 @@ pub enum NamedKeyConventionMode {
     V1_0Custom = 2,
 }
 
+#[repr(u8)]
+#[derive(PartialEq, Eq)]
+#[allow(clippy::upper_case_acronyms)]
+pub enum EventsMode {
+    NoEvents = 0,
+    CEP47 = 1,
+    CES = 2,
+}
+
 #[derive(Debug)]
 pub(crate) struct InstallerRequestBuilder {
     account_hash: AccountHash,
@@ -282,7 +304,8 @@ pub(crate) struct InstallerRequestBuilder {
     nft_kind: CLValue,
     holder_mode: CLValue,
     whitelist_mode: CLValue,
-    contract_whitelist: CLValue,
+    contract_whitelist: CLValue, // Deprecated in 1.4
+    acl_whitelist: CLValue,
     json_schema: CLValue,
     nft_metadata_kind: CLValue,
     identifier_mode: CLValue,
@@ -292,6 +315,8 @@ pub(crate) struct InstallerRequestBuilder {
     named_key_convention: CLValue,
     additional_required_metadata: CLValue,
     optional_metadata: CLValue,
+    events_mode: CLValue,
+    transfer_filter_contract: Option<CLValue>,
 }
 
 impl InstallerRequestBuilder {
@@ -317,6 +342,7 @@ impl InstallerRequestBuilder {
             holder_mode: CLValue::from_t(NFTHolderMode::Mixed as u8).unwrap(),
             whitelist_mode: CLValue::from_t(WhitelistMode::Unlocked as u8).unwrap(),
             contract_whitelist: CLValue::from_t(Vec::<ContractHash>::new()).unwrap(),
+            acl_whitelist: CLValue::from_t(Vec::<Key>::new()).unwrap(),
             json_schema: CLValue::from_t("test".to_string())
                 .expect("test_metadata was created from a concrete value"),
             nft_metadata_kind: CLValue::from_t(NFTMetadataKind::NFT721 as u8).unwrap(),
@@ -330,6 +356,8 @@ impl InstallerRequestBuilder {
             .unwrap(),
             additional_required_metadata: CLValue::from_t(Bytes::new()).unwrap(),
             optional_metadata: CLValue::from_t(Bytes::new()).unwrap(),
+            events_mode: CLValue::from_t(EventsMode::CES as u8).unwrap(),
+            transfer_filter_contract: None,
         }
     }
 
@@ -404,8 +432,14 @@ impl InstallerRequestBuilder {
         self
     }
 
+    // Deprecated in 1.4
     pub(crate) fn with_contract_whitelist(mut self, contract_whitelist: Vec<ContractHash>) -> Self {
         self.contract_whitelist = CLValue::from_t(contract_whitelist).unwrap();
+        self
+    }
+
+    pub(crate) fn with_acl_whitelist(mut self, acl_whitelist: Vec<Key>) -> Self {
+        self.acl_whitelist = CLValue::from_t(acl_whitelist).unwrap();
         self
     }
 
@@ -456,6 +490,16 @@ impl InstallerRequestBuilder {
         self
     }
 
+    pub(crate) fn with_events_mode(mut self, events_mode: EventsMode) -> Self {
+        self.events_mode = CLValue::from_t(events_mode as u8).unwrap();
+        self
+    }
+
+    pub(crate) fn with_transfer_filter_contract(mut self, transfer_filter_contract: Key) -> Self {
+        self.transfer_filter_contract = Some(CLValue::from_t(transfer_filter_contract).unwrap());
+        self
+    }
+
     pub(crate) fn build(self) -> RuntimeArgs {
         let mut runtime_args = RuntimeArgs::new();
         runtime_args.insert_cl_value(ARG_COLLECTION_NAME, self.collection_name);
@@ -467,25 +511,38 @@ impl InstallerRequestBuilder {
         runtime_args.insert_cl_value(ARG_NFT_KIND, self.nft_kind);
         runtime_args.insert_cl_value(ARG_HOLDER_MODE, self.holder_mode);
         runtime_args.insert_cl_value(ARG_WHITELIST_MODE, self.whitelist_mode);
-        runtime_args.insert_cl_value(ARG_CONTRACT_WHITELIST, self.contract_whitelist);
-        runtime_args.insert_cl_value(ARG_JSON_SCHEMA, self.json_schema);
+        runtime_args.insert_cl_value(ARG_CONTRACT_WHITELIST, self.contract_whitelist); // Deprecated in 1.4
+        runtime_args.insert_cl_value(ARG_ACL_WHITELIST, self.acl_whitelist);
         runtime_args.insert_cl_value(ARG_NFT_METADATA_KIND, self.nft_metadata_kind);
         runtime_args.insert_cl_value(ARG_IDENTIFIER_MODE, self.identifier_mode);
         runtime_args.insert_cl_value(ARG_METADATA_MUTABILITY, self.metadata_mutability);
         runtime_args.insert_cl_value(ARG_BURN_MODE, self.burn_mode);
         runtime_args.insert_cl_value(ARG_OWNER_LOOKUP_MODE, self.reporting_mode);
         runtime_args.insert_cl_value(ARG_NAMED_KEY_CONVENTION, self.named_key_convention);
+        runtime_args.insert_cl_value(ARG_EVENTS_MODE, self.events_mode);
         runtime_args.insert_cl_value(
             ARG_ADDITIONAL_REQUIRED_METADATA,
             self.additional_required_metadata,
         );
         runtime_args.insert_cl_value(ARG_OPTIONAL_METADATA, self.optional_metadata);
+        let json_schema = self
+            .json_schema
+            .clone()
+            .into_t::<String>()
+            .unwrap_or_default();
+        if !json_schema.is_empty() {
+            runtime_args.insert_cl_value(ARG_JSON_SCHEMA, self.json_schema);
+        }
+
+        if let Some(transfer_filter_contract) = self.transfer_filter_contract {
+            runtime_args.insert_cl_value(ARG_TRANSFER_FILTER_CONTRACT, transfer_filter_contract);
+        }
         runtime_args
     }
 }
 
 pub fn register_owner(context: &mut TestContext, contract: ContractHash, owner: Key) {
-    call_contract_memoized(
+    call_contract_with_result(
         context,
         contract,
         "register_owner",
@@ -496,7 +553,7 @@ pub fn register_owner(context: &mut TestContext, contract: ContractHash, owner: 
 }
 
 pub fn mint(context: &mut TestContext, contract: ContractHash, owner: Key) -> (String, Key, u64) {
-    let (a, b, c) = call_contract_memoized::<(String, Key, String)>(
+    let (a, b, c) = call_contract_with_result::<(String, Key, String)>(
         context,
         contract,
         "mint",
@@ -510,12 +567,24 @@ pub fn mint(context: &mut TestContext, contract: ContractHash, owner: Key) -> (S
 }
 
 pub fn owner_of(context: &mut TestContext, contract: ContractHash, token_id: u64) -> Key {
-    call_contract_memoized(
+    call_contract_with_result(
         context,
         contract,
         "owner_of",
         runtime_args! {
             "token_id" => token_id,
+        },
+    )
+}
+
+pub fn approve(context: &mut TestContext, contract: ContractHash, token_id: u64, spender: Key) {
+    call_contract_with_result(
+        context,
+        contract,
+        "approve",
+        runtime_args! {
+            "token_id" => token_id,
+            "spender" => spender,
         },
     )
 }

@@ -14,8 +14,6 @@ forward_entrypoints! {
         bid,
         post,
         cancel,
-        register_erc20_contract,
         register_cep78_contract,
-        request_undelegate,
     ]
 }

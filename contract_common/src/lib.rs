@@ -57,10 +57,10 @@ pub fn store_named_key_incremented(key: Key, name: &str) {
         let name_full = if i == 0 {
             name.to_string()
         } else {
-            format!("{}_{}", name, i)
+            format!("{name}_{i}")
         };
 
-        if !runtime::get_key(&name_full).is_some() {
+        if runtime::get_key(&name_full).is_none() {
             runtime::put_key(&name_full, key);
             break;
         }

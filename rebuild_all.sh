@@ -11,8 +11,8 @@
 )
 
 (
-    cd contract_memoize
+    cd contract_testutil
     cargo build --release --target wasm32-unknown-unknown --features onchain,test-support
-    cp target/wasm32-unknown-unknown/release/memoize.wasm ../wasm/memoize.wasm
+    cp target/wasm32-unknown-unknown/release/testutil.wasm ../wasm/testutil.wasm
 )
 

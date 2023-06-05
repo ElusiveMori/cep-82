@@ -1,60 +1,79 @@
-use contract_common::{prelude::*, token::TokenIdentifier};
+use contract_common::{prelude::*, FromNamedArg};
+use num_traits::AsPrimitive;
 
 use crate::CustodialError;
 
-serializable_structs! {
-    #[derive(Debug, Clone, PartialEq, Eq)]
-    pub struct OwnerData {
-        pub owned_count: u64,
-    }
-}
-
 named_keys! {
-    init_all(manager: Key, wrapped_contract: ContractPackageHash, royalty_percent: U256):
-    dict real_owner_by_token: Key;
-    dict delegate_by_token: ContractPackageHash;
-    dict owner_data: OwnerData;
+    init_all(manager: Key, royalty_structure: RoyaltyStructure):
     dict whitelisted_marketplaces: bool;
-    dict whitelisted_payment_tokens: bool;
+    dict royalty_payments: RoyaltyPaymentState;
 
+    val marketplace_whitelist_enabled: bool = false;
     val manager: Key = manager;
-    val wrapped_contract: ContractPackageHash = wrapped_contract;
-    val royalty_percent: U256 = royalty_percent;
-}
-
-pub fn check_is_token_known(token: &TokenIdentifier) {
-    real_owner_of(token);
-}
-
-pub fn real_owner_of(token: &TokenIdentifier) -> Key {
-    real_owner_by_token::try_read(&b64_cl(token))
-        .unwrap_or_revert_with(CustodialError::UnknownToken)
-}
-
-pub fn try_real_owner_of(token: &TokenIdentifier) -> Option<Key> {
-    real_owner_by_token::try_read(&b64_cl(token))
-}
-
-pub fn set_real_owner(token: &TokenIdentifier, owner: Key) {
-    real_owner_by_token::write(&b64_cl(token), owner);
-}
-
-pub fn delegate_of(token: &TokenIdentifier) -> Option<ContractPackageHash> {
-    delegate_by_token::try_read(&b64_cl(token))
-}
-
-pub fn set_delegate(token: &TokenIdentifier, delegate: Option<ContractPackageHash>) {
-    if let Some(delegate) = delegate {
-        delegate_by_token::write(&b64_cl(token), delegate);
-    } else {
-        delegate_by_token::remove(&b64_cl(token));
-    }
-}
-
-pub fn is_payment_token_whitelisted(token: ContractPackageHash) -> bool {
-    whitelisted_payment_tokens::try_read(&b64_cl(&token)).unwrap_or(false)
+    val royalty_structure: RoyaltyStructure = royalty_structure;
 }
 
 pub fn is_marketplace_whitelisted(marketplace: ContractPackageHash) -> bool {
     whitelisted_marketplaces::try_read(&b64_cl(&marketplace)).unwrap_or(false)
 }
+
+#[allow(clippy::large_enum_variant)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RoyaltyPaymentState {
+    Unpaid,
+    Paid {
+        payer: Key,
+        source_key: Key,
+        amount: U512,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RoyaltyStep {
+    Minimum { amount: U512 },
+    Flat { amount: U512 },
+    Percentage { percent: U256 },
+}
+
+serializable_structs! {
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub struct RoyaltyStructure {
+        pub steps: Vec<RoyaltyStep>,
+    }
+}
+
+impl RoyaltyStructure {
+    pub fn calculate_total_royalty(&self, total_payment: U512) -> U512 {
+        let mut payment = total_payment;
+        let mut total_royalty = U512::zero();
+        for step in &self.steps {
+            match step {
+                RoyaltyStep::Minimum { amount } => {
+                    if payment < *amount {
+                        payment = *amount;
+                    }
+                }
+                RoyaltyStep::Flat { amount } => {
+                    total_royalty = total_royalty
+                        .checked_add(*amount)
+                        .unwrap_or_revert_with(CustodialError::Overflow);
+                }
+                RoyaltyStep::Percentage { percent } => {
+                    total_royalty = total_royalty
+                        .checked_add(
+                            total_payment
+                                .checked_mul(percent.as_())
+                                .unwrap_or_revert_with(CustodialError::Overflow)
+                                .checked_div(10000u64.into())
+                                .unwrap_or_revert_with(CustodialError::Overflow),
+                        )
+                        .unwrap_or_revert_with(CustodialError::Overflow);
+                }
+            }
+        }
+
+        total_royalty
+    }
+}
+
+impl FromNamedArg for RoyaltyStructure {}

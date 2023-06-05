@@ -3,40 +3,25 @@ use casper_types::{runtime_args, ContractHash, ContractPackageHash, RuntimeArgs,
 use super::{call_contract, TestContext};
 
 pub mod marketplace {
-    use crate::util::call_contract_memoized;
+    use casper_types::URef;
+
+    use crate::util::call_contract_with_result;
 
     use super::*;
 
     pub fn register_nft(
         context: &mut TestContext,
         contract: ContractHash,
-        to_register: ContractPackageHash,
-        is_cep82_compliant: bool,
+        nft_package: ContractPackageHash,
+        custodial_package: Option<ContractPackageHash>,
     ) {
-        call_contract(
-            context,
-            contract,
-            "register_cep78_contract",
-            runtime_args! {
-                "package" => to_register,
-                "is_cep82_compliant" => is_cep82_compliant,
-            },
-        )
-    }
+        let mut args = RuntimeArgs::new();
+        args.insert("nft_package", nft_package).unwrap();
+        if let Some(custodial_package) = custodial_package {
+            args.insert("custodial_package", custodial_package).unwrap();
+        }
 
-    pub fn register_erc(
-        context: &mut TestContext,
-        contract: ContractHash,
-        to_register: ContractPackageHash,
-    ) {
-        call_contract(
-            context,
-            contract,
-            "register_erc20_contract",
-            runtime_args! {
-                "package" => to_register,
-            },
-        )
+        call_contract(context, contract, "register_cep78_contract", args)
     }
 
     pub fn post(
@@ -45,9 +30,9 @@ pub mod marketplace {
         nft_contract: ContractPackageHash,
         token_id: u64,
         price: U256,
-        quote_token_contract: ContractPackageHash,
+        target_purse: URef,
     ) -> u64 {
-        call_contract_memoized::<u64>(
+        call_contract_with_result::<u64>(
             context,
             contract,
             "post",
@@ -55,18 +40,25 @@ pub mod marketplace {
                 "nft_contract" => nft_contract,
                 "token_id" => token_id,
                 "price" => price,
-                "quote_token_contract" => quote_token_contract,
+                "target_purse" => target_purse,
             },
         )
     }
 
-    pub fn bid(context: &mut TestContext, contract: ContractHash, post_id: u64, amount: U256) {
+    pub fn bid(
+        context: &mut TestContext,
+        contract: ContractHash,
+        post_id: u64,
+        source_purse: URef,
+        amount: U256,
+    ) {
         call_contract(
             context,
             contract,
             "bid",
             runtime_args! {
                 "post_id" => post_id,
+                "source_purse" => source_purse,
                 "amount" => amount,
             },
         )
@@ -77,7 +69,7 @@ pub mod custodial {
     use casper_types::{runtime_args, ContractHash, Key};
     use casper_types::{ContractPackageHash, RuntimeArgs};
 
-    use crate::util::{call_contract, call_contract_memoized, cep78, TestContext};
+    use crate::util::{call_contract, call_contract_with_result, cep78, TestContext};
 
     pub fn claim(context: &mut TestContext, contract: ContractHash, token_id: u64, owner: Key) {
         call_contract(
@@ -111,7 +103,7 @@ pub mod custodial {
         contract: ContractHash,
         token_id: u64,
     ) -> Option<ContractPackageHash> {
-        call_contract_memoized::<Option<ContractPackageHash>>(
+        call_contract_with_result::<Option<ContractPackageHash>>(
             context,
             contract,
             "delegate",
